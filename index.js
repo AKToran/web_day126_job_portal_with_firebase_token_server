@@ -12,6 +12,16 @@ app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.db_user}:${process.env.db_password}@cluster0.cjjjauk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./firebase-admin-key.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -55,6 +65,7 @@ async function run() {
     //job application related apis
     app.get('/applications', async(req, res)=>{
       const email = req.query.email;
+
       const query = { applicant : email };
       const result = await applicationCollection.find(query).toArray();
       res.send(result); 
