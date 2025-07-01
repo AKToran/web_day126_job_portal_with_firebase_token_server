@@ -85,6 +85,10 @@ async function run() {
     app.get('/applications', verifyFirebaseToken, async(req, res)=>{
       const email = req.query.email;
 
+      if(email !== req.decoded.email){
+        return res.status(403).message({message: 'forbidden access'});
+      }
+
       const query = { applicant : email };
       const result = await applicationCollection.find(query).toArray();
       res.send(result); 
