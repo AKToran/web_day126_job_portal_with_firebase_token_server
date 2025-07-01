@@ -12,14 +12,33 @@ app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.db_user}:${process.env.db_password}@cluster0.cjjjauk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-var admin = require("firebase-admin");
-
-var serviceAccount = require("./firebase-admin-key.json");
+const admin = require("firebase-admin");
+const serviceAccount = require("./firebase-admin-key.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
+//verify token:
+const verifyFirebaseToken = async(req, res, next) =>{
+  const authorizationString = req.headers?.authorization;
+
+  if(!authorizationString || !authorizationString.startsWith('Bearer ')){
+    return res.status(401).send({message : 'unauthorized access'});
+  }
+
+  const token = authorizationString.split(' ')[1];
+  
+  try{
+    const decoded = await admin.auth().verifyIdToken(token);
+    console.log(decoded);
+    req.decoded = decoded;
+    next();
+  }
+  catch(error){
+    return res.status(401).send({ message: 'unauthorized access.' })
+  }
+}
 
 
 const client = new MongoClient(uri, {
@@ -63,7 +82,7 @@ async function run() {
     })
 
     //job application related apis
-    app.get('/applications', async(req, res)=>{
+    app.get('/applications', verifyFirebaseToken, async(req, res)=>{
       const email = req.query.email;
 
       const query = { applicant : email };
